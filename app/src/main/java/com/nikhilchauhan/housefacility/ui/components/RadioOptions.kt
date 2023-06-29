@@ -30,7 +30,7 @@ fun RadioOptions(
               onOptionSelected(optionItem)
             }
           })
-          .padding(16.dp),
+          .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
