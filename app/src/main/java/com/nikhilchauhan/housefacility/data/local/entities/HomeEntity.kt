@@ -10,9 +10,11 @@ data class HomeEntity(
   @PrimaryKey(autoGenerate = true)
   val id: Int,
   @ColumnInfo(name = "exclusions")
-  val exclusions: List<List<Exclusion?>?>?,
+  val exclusions: List<List<HomeEntity.Exclusion?>?>?,
   @ColumnInfo(name = "facilities")
-  val facilities: List<Facility?>?
+  val facilities: List<HomeEntity.Facility?>?,
+  @ColumnInfo(name = "updated_at")
+  val updatedAt: Long = System.currentTimeMillis()
 ) {
   data class Exclusion(
     @ColumnInfo(name = "facility_id")
