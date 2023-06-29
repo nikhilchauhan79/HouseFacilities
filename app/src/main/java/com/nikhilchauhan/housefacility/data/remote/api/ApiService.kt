@@ -1,6 +1,5 @@
 package com.nikhilchauhan.housefacility.data.remote.api
 
-import android.graphics.Movie
 import com.nikhilchauhan.housefacility.constants.Constants
 import com.nikhilchauhan.housefacility.data.remote.model.HomeResponse
 import retrofit2.Response

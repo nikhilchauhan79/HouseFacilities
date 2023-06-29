@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.nikhilchauhan.housefacility.data.local.dao.HomeDao
 import com.nikhilchauhan.housefacility.data.local.entities.HomeEntity
 
 @Database(entities = [HomeEntity::class], version = 1, exportSchema = false)
+@TypeConverters(Convertors::class)
 abstract class HomeDatabase : RoomDatabase() {
   abstract fun homeDao(): HomeDao
 

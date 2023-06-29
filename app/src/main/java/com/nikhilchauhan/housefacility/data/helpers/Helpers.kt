@@ -20,18 +20,18 @@ inline fun <reified T, reified A> performGetOperation(
     val localData = databaseQuery.invoke().first()
     emit(NetworkResult.Success(localData))
 
-    val networkResponse = networkCall.invoke()
+//    val networkResponse = networkCall.invoke()
 
-    if (networkResponse is NetworkResult.Success) {
-      networkResponse.data?.let { nnData ->
-        saveCallResult(nnData)
-        (nnData as A).networkResponseToRoomEntity<T, A>()?.let {
-          emit(NetworkResult.Success(it))
-        }
-      }
-    } else if (networkResponse is NetworkResult.Error) {
-      networkResponse.message?.let {
-        emit(NetworkResult.Error(it))
-      }
-    }
+//    if (networkResponse is NetworkResult.Success) {
+//      networkResponse.data?.let { nnData ->
+//        saveCallResult(nnData)
+//        (nnData as A).networkResponseToRoomEntity<T, A>()?.let {
+//          emit(NetworkResult.Success(it))
+//        }
+//      }
+//    } else if (networkResponse is NetworkResult.Error) {
+//      networkResponse.message?.let {
+//        emit(NetworkResult.Error(it))
+//      }
+//    }
   }.flowOn(Dispatchers.IO)

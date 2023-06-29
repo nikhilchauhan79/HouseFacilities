@@ -8,6 +8,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Singleton
 
 @Module
@@ -18,4 +20,8 @@ object AppModule {
   @Singleton
   fun provideHomeDao(@ApplicationContext context: Context): HomeDao =
     HomeDatabase.getDatabase(context).homeDao()
+
+  @Provides
+  @Singleton
+  fun provideIoDispatchers(): CoroutineDispatcher = Dispatchers.IO
 }
