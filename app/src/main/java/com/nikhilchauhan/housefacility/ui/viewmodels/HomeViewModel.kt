@@ -2,6 +2,7 @@ package com.nikhilchauhan.housefacility.ui.viewmodels
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nikhilchauhan.housefacility.data.local.entities.HomeEntity
@@ -11,8 +12,11 @@ import com.nikhilchauhan.housefacility.ui.HomeUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
@@ -21,12 +25,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-  private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+  private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
   private val homeRepository: HomeRepository
 ) : ViewModel() {
   private val _homeNetworkResult: MutableStateFlow<NetworkResult<HomeEntity>?> =
     MutableStateFlow(null)
+  private val _errorStates: MutableSharedFlow<UiStates<MutableList<HomeEntity.Facility.Option>>> =
+    MutableStateFlow(UiStates.Initialised(mutableListOf()))
+
   val homeNetworkResult: StateFlow<NetworkResult<HomeEntity>?> = _homeNetworkResult.asStateFlow()
+  val errorStates: SharedFlow<UiStates<MutableList<HomeEntity.Facility.Option>>> = _errorStates.asSharedFlow()
+
   val exclusionsList = mutableListOf<MutableMap<String, String>>()
 
   val homeUiState = MutableStateFlow(
@@ -48,13 +57,38 @@ class HomeViewModel @Inject constructor(
         homeUiState.value[facility.facilityId.toString()] =
           HomeUiState(option) { facilityId, optionSelected ->
             homeUiState.update { map ->
-              val newState = map[facilityId]?.copy(selectedOption = optionSelected)
+              val tempState = mutableStateMapOf<String, HomeUiState>()
+              tempState.putAll(map)
+              val newState = tempState[facilityId]?.copy(selectedOption = optionSelected)
               if (newState != null) {
-                map[facilityId] = newState
+                tempState[facilityId] = newState
               }
-              map
+              val isValid = validateState(tempState)
+              if (!isValid.second) tempState else {
+                val invalidOption = mutableListOf<HomeEntity.Facility.Option>()
+                isValid.first.forEach { (key, value) ->
+                  homeNetworkResult.value?.data?.facilities?.find {
+                    it?.facilityId == key
+                  }?.options?.filterNotNull()?.find {
+                    it.id == value
+                  }?.also {
+                    invalidOption.add(
+                      it
+                    )
+                  }
+                }
+
+                _errorStates.tryEmit(
+                  UiStates.Invalid(
+                    invalidOption,
+                    invalidOption.joinToString {
+                      it.name.toString()
+                    }
+                  )
+                )
+                map
+              }
             }
-            validateState()
           }
       }
     }
@@ -71,9 +105,9 @@ class HomeViewModel @Inject constructor(
     }
   }
 
-  private fun validateState(): MutableMap<String, String> {
+  private fun validateState(tempState: SnapshotStateMap<String, HomeUiState>): Pair<MutableMap<String, String>, Boolean> {
     val hasExclusions = mutableListOf(mutableMapOf<String, String>())
-    homeUiState.value.forEach { (facilityId, state) ->
+    tempState.forEach { (facilityId, state) ->
       val currentMap = mutableMapOf<String, String>()
       exclusionsList.forEach { map ->
         currentMap.putAll(map.filter {
@@ -91,20 +125,21 @@ class HomeViewModel @Inject constructor(
     var answerMap = mutableMapOf<String, String>()
     exclusionsList.forEach { exMapList ->
       answerMap = mutableMapOf()
-      exclusionMap.forEach {exMap ->
-        if(exMapList.containsKey(exMap.key) && exMapList.containsValue(exMap.value)){
+      exclusionMap.forEach { exMap ->
+        if (exMapList.containsKey(exMap.key) && exMapList.containsValue(exMap.value)) {
           answerMap[exMap.key] = exMap.value
         }
       }
-      if(answerMap.size == exMapList.size && exclusionsList.contains(answerMap)){
+      if (answerMap.size == exMapList.size && exclusionsList.contains(answerMap)) {
         Log.d("TAG", "validateState: $answerMap")
-        return answerMap
+        return Pair(answerMap, true)
       }
     }
     if (exclusionsList.contains(answerMap)) {
       Log.d("TAG", "validateState: $exclusionMap")
+      return Pair(answerMap, true)
     }
-    return answerMap
+    return Pair(answerMap, false)
   }
 
 

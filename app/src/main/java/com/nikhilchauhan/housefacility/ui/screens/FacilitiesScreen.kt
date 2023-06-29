@@ -36,7 +36,7 @@ fun FacilitiesScreen(
   facilityList: List<HomeEntity.Facility>,
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
-  val homeUiState = viewModel.homeUiState.collectAsStateWithLifecycle().value
+  val homeUiState = viewModel.homeUiState.collectAsStateWithLifecycle()
   Scaffold(
     topBar = {
       TopAppBar(title = {
@@ -55,8 +55,8 @@ fun FacilitiesScreen(
         FacilityRow(
           facility = facility,
           nnOptions,
-          selectedOption = homeUiState[facility.facilityId]?.selectedOption ?: nnOptions[0],
-          onOptionSelected = homeUiState[facility.facilityId]?.onOptionSelected
+          selectedOption = homeUiState.value[facility.facilityId]?.selectedOption ?: nnOptions[0],
+          onOptionSelected = homeUiState.value[facility.facilityId]?.onOptionSelected
             ?: { facilityId, option ->
             }
         )

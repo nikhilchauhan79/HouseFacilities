@@ -24,7 +24,7 @@ inline fun <reified T, reified A> performGetOperation(
     val localResult = NetworkResult.Success(localData)
     emit(localResult)
     val shouldUpdateFromServer = if(localResult.data != null) {
-        shouldUpdateFromServer((localResult.data as HomeEntity).updatedAt)
+        shouldUpdateFromServer((localResult.data as? HomeEntity)?.updatedAt)
     } else true
 
     if (shouldUpdateFromServer) {
