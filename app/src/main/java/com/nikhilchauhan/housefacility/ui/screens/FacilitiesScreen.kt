@@ -16,16 +16,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhilchauhan.housefacility.data.local.entities.HomeEntity
+import com.nikhilchauhan.housefacility.ui.IconResource
 import com.nikhilchauhan.housefacility.ui.components.RadioOptions
 import com.nikhilchauhan.housefacility.ui.viewmodels.HomeViewModel
 
@@ -81,7 +81,7 @@ fun FacilityRow(
     ) {
       Text(
         text = facility.name ?: "",
-        style = MaterialTheme.typography.bodyLarge,
+        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
         modifier = Modifier
           .width(120.dp)
           .padding(top = 24.dp, end = 8.dp, start = 12.dp),
@@ -90,6 +90,23 @@ fun FacilityRow(
       RadioOptions(options = options, selectedOption = selectedOption, onOptionSelected = {
         onOptionSelected(facility.facilityId ?: "", it)
       })
+    }
+  }
+}
+
+fun getIconResource(optionId: String): IconResource {
+  return when (optionId) {
+    "1" -> IconResource.Apartment()
+    "2" -> IconResource.Condo()
+    "3" -> IconResource.BoatHouse()
+    "4" -> IconResource.Land()
+    "6" -> IconResource.Rooms()
+    "7" -> IconResource.NoRooms()
+    "10" -> IconResource.SwimmingPool()
+    "11" -> IconResource.GardenArea()
+    "12" -> IconResource.Garage()
+    else -> {
+      IconResource.Apartment()
     }
   }
 }
