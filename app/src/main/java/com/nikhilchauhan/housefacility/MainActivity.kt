@@ -48,46 +48,18 @@ class MainActivity : ComponentActivity() {
     setContent {
       val homeViewModel: HomeViewModel = hiltViewModel()
       val facilitiesNetworkResult = homeViewModel.homeNetworkResult.collectAsStateWithLifecycle()
-      val uiStates =
-        homeViewModel.errorStates.collectAsStateWithLifecycle(
-          initialValue = UiStates.Initialised(
-            mutableListOf()
-          )
-        )
 
       HouseFacilityTheme {
         // A surface container using the 'background' color from the theme
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
           facilitiesNetworkResult.value?.let {
             HandleFacilitiesNetworkResult(it)
-            HandleUiStates(uiStates.value)
           }
         }
       }
     }
   }
 
-  @Composable
-  private fun HandleUiStates(uiStates: UiStates<MutableList<HomeEntity.Facility.Option>>) {
-    val context = LocalContext.current
-    when (uiStates) {
-      is UiStates.Initialised -> {
-
-      }
-
-      is UiStates.Invalid -> {
-        Toast.makeText(
-          context,
-          "${uiStates.errorMessage} cannot be selected together. Please select correct options.",
-          Toast.LENGTH_SHORT
-        ).show()
-      }
-
-      is UiStates.Valid -> {
-
-      }
-    }
-  }
 
   @Composable
   private fun HandleFacilitiesNetworkResult(facilitiesNetworkResult: NetworkResult<HomeEntity>) {

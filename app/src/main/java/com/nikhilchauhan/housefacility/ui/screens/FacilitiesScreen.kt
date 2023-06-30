@@ -16,9 +16,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +36,8 @@ import com.nikhilchauhan.housefacility.data.local.entities.HomeEntity
 import com.nikhilchauhan.housefacility.ui.IconResource
 import com.nikhilchauhan.housefacility.ui.components.RadioOptions
 import com.nikhilchauhan.housefacility.ui.viewmodels.HomeViewModel
+import com.nikhilchauhan.housefacility.ui.viewmodels.UiStates
+import kotlinx.coroutines.CoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -37,6 +47,16 @@ fun FacilitiesScreen(
   viewModel: HomeViewModel = hiltViewModel(),
 ) {
   val homeUiState = viewModel.homeUiState.collectAsStateWithLifecycle()
+  val uiStates =
+    viewModel.errorStates.collectAsStateWithLifecycle(
+      initialValue = UiStates.Initialised(
+        mutableListOf()
+      )
+    )
+  val snackBarHostState = remember {
+    SnackbarHostState()
+  }
+
   Scaffold(
     topBar = {
       TopAppBar(title = {
@@ -46,8 +66,10 @@ fun FacilitiesScreen(
           Icon(Icons.Default.Menu, contentDescription = "Menu Icon")
         }
       })
-    }
-  ) {
+    },
+    snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+
+    ) {
     LazyColumn(contentPadding = it) {
 
       items(facilityList) { facility ->
@@ -61,6 +83,48 @@ fun FacilitiesScreen(
             }
         )
       }
+    }
+  }
+  HandleUiStates(uiStates = uiStates.value, snackBarHostState = snackBarHostState)
+}
+
+@Composable
+private fun HandleUiStates(
+  uiStates: UiStates<MutableList<HomeEntity.Facility.Option>>,
+  snackBarHostState: SnackbarHostState,
+) {
+  val showSnackbar = remember {
+    mutableStateOf(false)
+  }
+
+  when (uiStates) {
+    is UiStates.Initialised -> {
+
+    }
+
+    is UiStates.Invalid -> {
+      showSnackbar.value = true
+      LaunchedEffect(key1 = uiStates) {
+        if (showSnackbar.value) {
+          val snackbarResult = snackBarHostState.showSnackbar(
+            "${uiStates.errorMessage} cannot be selected together. Please select correct options.",
+            duration = SnackbarDuration.Short
+          )
+          when (snackbarResult) {
+            SnackbarResult.Dismissed -> {
+                showSnackbar.value = false
+            }
+
+            SnackbarResult.ActionPerformed -> {
+
+            }
+          }
+        }
+      }
+    }
+
+    is UiStates.Valid -> {
+
     }
   }
 }
