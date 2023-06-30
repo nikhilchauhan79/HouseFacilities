@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nikhilchauhan.housefacility.data.local.entities.HomeEntity
 import com.nikhilchauhan.housefacility.ui.IconResource
+import com.nikhilchauhan.housefacility.ui.components.FacilityRow
 import com.nikhilchauhan.housefacility.ui.components.RadioOptions
 import com.nikhilchauhan.housefacility.ui.viewmodels.HomeViewModel
 import com.nikhilchauhan.housefacility.ui.viewmodels.UiStates
@@ -56,6 +57,10 @@ fun FacilitiesScreen(
   val snackBarHostState = remember {
     SnackbarHostState()
   }
+  val showSnackbar = remember {
+    mutableStateOf(false)
+  }
+
 
   Scaffold(
     topBar = {
@@ -85,34 +90,38 @@ fun FacilitiesScreen(
       }
     }
   }
-  HandleUiStates(uiStates = uiStates.value, snackBarHostState = snackBarHostState)
+  HandleUiStates(
+    uiStates = uiStates.value,
+    snackBarHostState = snackBarHostState,
+    showSnackbar = showSnackbar.value,
+    setShowSnackbar = {
+      showSnackbar.value = it
+    })
 }
 
 @Composable
 private fun HandleUiStates(
   uiStates: UiStates<MutableList<HomeEntity.Facility.Option>>,
   snackBarHostState: SnackbarHostState,
+  showSnackbar: Boolean,
+  setShowSnackbar: (Boolean) -> Unit
 ) {
-  val showSnackbar = remember {
-    mutableStateOf(false)
-  }
-
   when (uiStates) {
     is UiStates.Initialised -> {
 
     }
 
     is UiStates.Invalid -> {
-      showSnackbar.value = true
+      setShowSnackbar(true)
       LaunchedEffect(key1 = uiStates) {
-        if (showSnackbar.value) {
+        if (showSnackbar) {
           val snackbarResult = snackBarHostState.showSnackbar(
             "${uiStates.errorMessage} cannot be selected together. Please select correct options.",
-            duration = SnackbarDuration.Long
+            duration = SnackbarDuration.Short
           )
           when (snackbarResult) {
             SnackbarResult.Dismissed -> {
-                showSnackbar.value = false
+              setShowSnackbar(false)
             }
 
             SnackbarResult.ActionPerformed -> {
@@ -125,35 +134,6 @@ private fun HandleUiStates(
 
     is UiStates.Valid -> {
 
-    }
-  }
-}
-
-@Composable
-fun FacilityRow(
-  facility: HomeEntity.Facility, options: List<HomeEntity.Facility.Option?>,
-  selectedOption: HomeEntity.Facility.Option,
-  onOptionSelected: (facilityId: String, HomeEntity.Facility.Option) -> Unit
-) {
-  Card(
-    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
-  ) {
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .wrapContentHeight(),
-    ) {
-      Text(
-        text = facility.name ?: "",
-        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-        modifier = Modifier
-          .width(120.dp)
-          .padding(top = 24.dp, end = 8.dp, start = 12.dp),
-        maxLines = 3
-      )
-      RadioOptions(options = options, selectedOption = selectedOption, onOptionSelected = {
-        onOptionSelected(facility.facilityId ?: "", it)
-      })
     }
   }
 }
