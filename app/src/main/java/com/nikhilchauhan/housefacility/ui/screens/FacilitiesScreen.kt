@@ -108,7 +108,7 @@ private fun HandleUiStates(
         if (showSnackbar.value) {
           val snackbarResult = snackBarHostState.showSnackbar(
             "${uiStates.errorMessage} cannot be selected together. Please select correct options.",
-            duration = SnackbarDuration.Short
+            duration = SnackbarDuration.Long
           )
           when (snackbarResult) {
             SnackbarResult.Dismissed -> {

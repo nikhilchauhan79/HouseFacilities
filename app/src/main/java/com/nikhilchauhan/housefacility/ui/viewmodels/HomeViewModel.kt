@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nikhilchauhan.housefacility.data.datastore.PrefDataStoreRepo
 import com.nikhilchauhan.housefacility.data.local.entities.HomeEntity
 import com.nikhilchauhan.housefacility.data.remote.NetworkResult
 import com.nikhilchauhan.housefacility.data.remote.repository.HomeRepository
@@ -26,7 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
   private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-  private val homeRepository: HomeRepository
+  private val homeRepository: HomeRepository,
+  private val prefDataStoreRepo: PrefDataStoreRepo
 ) : ViewModel() {
   private val _homeNetworkResult: MutableStateFlow<NetworkResult<HomeEntity>?> =
     MutableStateFlow(null)
@@ -34,7 +36,8 @@ class HomeViewModel @Inject constructor(
     MutableStateFlow(UiStates.Initialised(mutableListOf()))
 
   val homeNetworkResult: StateFlow<NetworkResult<HomeEntity>?> = _homeNetworkResult.asStateFlow()
-  val errorStates: SharedFlow<UiStates<MutableList<HomeEntity.Facility.Option>>> = _errorStates.asSharedFlow()
+  val errorStates: SharedFlow<UiStates<MutableList<HomeEntity.Facility.Option>>> =
+    _errorStates.asSharedFlow()
 
   val exclusionsList = mutableListOf<MutableMap<String, String>>()
 
@@ -64,7 +67,12 @@ class HomeViewModel @Inject constructor(
                 tempState[facilityId] = newState
               }
               val isValid = validateState(tempState)
-              if (!isValid.second) tempState else {
+              if (!isValid.second) {
+                viewModelScope.launch {
+                  prefDataStoreRepo.putString(facilityId, optionSelected.id.toString())
+                }
+                tempState
+              } else {
                 val invalidOption = mutableListOf<HomeEntity.Facility.Option>()
                 isValid.first.forEach { (key, value) ->
                   homeNetworkResult.value?.data?.facilities?.find {
@@ -92,6 +100,24 @@ class HomeViewModel @Inject constructor(
           }
       }
     }
+    viewModelScope.launch {
+      homeUiState.update { stateMap ->
+        stateMap.forEach { map ->
+          val savedOption = prefDataStoreRepo.getString(map.key)
+          if (savedOption != null) {
+            homeNetworkResult.value?.data?.facilities?.filterNotNull()?.forEach { facility ->
+              facility.options?.forEach {
+                if (it?.id == savedOption) {
+                  stateMap[map.key]?.selectedOption = it
+                }
+              }
+            }
+          }
+        }
+        stateMap
+      }
+    }
+
   }
 
   private fun buildExclusionsMappedList(data: HomeEntity) {
